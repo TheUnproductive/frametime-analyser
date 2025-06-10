@@ -4,24 +4,24 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 from libraries import *
+import argparse
 
 pause_frame = False 
 # pause_frame = True #wait for keypress before playing next frame
 
-#RDR2 capture
-# cap = cv2.VideoCapture("F:/ReLive/2020.09.18-22.33.mp4", cv2.CAP_MSMF)	#worse decoder
-file_path="F:/ReLive/rdr2 h264.m4v" #transcoded HEVC to h264
-file_path="F:/ReLive/2020.10.17-09.29.mp4" #second h264
-#ACO capture
-# file_path="F:/ReLive/2020.09.24-21.36.mp4"
+parser = argparse.ArgumentParser(description='Frametime Analyser')
+parser.add_argument('file_path', type=str, help='Path to the video file')
+args = parser.parse_args()
 
-# file_path="E:/Downloads/The Last of Us 2 - What 60fps Gameplay Looks Like.mp4"
-file_path="F:/ReLive/2020.10.14-21.51.mp4" #forza
-# cap = cv2.VideoCapture("E:\Downloads\GTA 5 ►RTX 3090 8k 60fps MAX SETTINGS With Ray Tracing Ultra Graphics Mod! GTA 6 Level PC Graphics!.mp4")
+if not args.file_path:
+    print("No file path provided. Please provide a video file path.")
+    exit(1)
 
-
-
-
+file_path = args.file_path
+cap = cv2.VideoCapture(file_path)
+if not cap.isOpened():
+    print(f"Error: Could not open video file {file_path}")
+    exit(1)
 
 fvs = FileVideoStream(file_path).start()
 time.sleep(3)
@@ -87,19 +87,19 @@ while fvs.more():
     frame_diff = cv2.absdiff(cropped_frame, cropped_prev_frame)
     average = frame_diff.mean(axis=0).mean(axis=0)
     if count == 1:
-    	moving_avg_brightness = average
+        moving_avg_brightness = average
     perf_list.append((cv2.getTickCount() - timestamp_before_imshow)/ cv2.getTickFrequency()*1000-sum(perf_list))
-    	
+
 
 
     threshold = 0.25*moving_avg_brightness #threshold below which a frame is considered "identical" or dropped
     if average < threshold:
-    	fps_list.pop(0)
-    	fps_list.append(0)
-    	fps = sum(fps_list)
-
-    	fps_graph.pop(0)
-    	fps_graph.append(fps)
+        fps_list.pop(0)
+        fps_list.append(0)
+        fps = sum(fps_list)
+        
+        fps_graph.pop(0)
+        fps_graph.append(fps)
     else:
         result = ""
         frametime_text = frametime
@@ -107,16 +107,16 @@ while fvs.more():
         frametime_graph.append(frametime)
         
         fps_list.pop(0)
-    	fps_list.append(1)
-    	fps = sum(fps_list)
-
-    	fps_graph.pop(0)
-    	fps_graph.append(fps)
+        fps_list.append(1)
+        fps = sum(fps_list)
+        
+        fps_graph.pop(0)
+        fps_graph.append(fps)
         frametime = 0	#frametime will be incremented at end of loop
 
 
     if(count)<60:
-    	fps = ""
+        fps = ""
     # print (average, moving_avg_brightness, result)
     moving_avg_brightness = (moving_avg_brightness + average/3)*3/4
 
@@ -154,24 +154,24 @@ while fvs.more():
 
         prev_ft = frametime_graph[key-1]
         if key ==0:
-        	continue
+            continue
         if prev_ft == 0:
             continue        
         cv2.line(resize,(
-        	plt_origin_x + key*pt_spacing, 
-        	plt_origin_y-value*y_scale
-        	),(
-        	plt_origin_x + key*pt_spacing + pt_width, 
-        	plt_origin_y-value*y_scale
-        	),graph_color,2)
+                plt_origin_x + key*pt_spacing, 
+                plt_origin_y-value*y_scale
+            ),(
+                plt_origin_x + key*pt_spacing + pt_width, 
+                plt_origin_y-value*y_scale
+            ),graph_color,2)
         if key !=0:
             cv2.line(resize,(
-	            plt_origin_x + key*pt_spacing - pt_gap, 
-	            plt_origin_y- prev_ft*y_scale
-	            ),(
-	            plt_origin_x + key*pt_spacing, 
-	            plt_origin_y-value*y_scale
-	            ),graph_color,2) #vertical
+                    plt_origin_x + key*pt_spacing - pt_gap, 
+                    plt_origin_y- prev_ft*y_scale
+                ),(
+                    plt_origin_x + key*pt_spacing, 
+                    plt_origin_y-value*y_scale
+                ),graph_color,2) #vertical
     cv2.rectangle(resize,(plt_origin_x,plt_origin_y-60),(plt_origin_x+frametime_samples*pt_spacing,plt_origin_y-10),text_color,2)
     cv2.putText(resize, text="16.7", org=(plt_origin_x+frametime_samples*pt_spacing+10,plt_origin_y-15),fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=0.4, color=text_color, thickness=1)
     cv2.putText(resize, text="33.3", org=(plt_origin_x+frametime_samples*pt_spacing+10,plt_origin_y- 15 - y_scale),fontFace=cv2.	FONT_HERSHEY_DUPLEX, fontScale=0.4, color=text_color, thickness=1)
@@ -192,7 +192,7 @@ while fvs.more():
         if count<fps_graph_samples-key+60:
             continue
         if key == 0:
-        	continue
+            continue
         prev_ft = fps_graph[key-1]
         start_point = plt_origin_x + key*graph_speed		, plt_origin_y-(prev_ft-60)*y_scale
         end_point 	= plt_origin_x + (key+1)*graph_speed	, plt_origin_y-(value-60)*y_scale
@@ -218,8 +218,8 @@ while fvs.more():
         perf_list.append(calc_time)
         perf_list = list(np.around(np.array(perf_list),2))
 
-        print "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"        
-        print perf_list
+        print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")        
+        print(perf_list)
 
       
     #vsync
